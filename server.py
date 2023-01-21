@@ -43,40 +43,57 @@ import os
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
+
+    def error_code(self, code):
+        if code == 404:
+            self.status_code = 404
+            self.message = "Not found"
+        if code == 405:
+            self.status_code = 405
+            self.message = "Method Not Allowed"
+        if code == 301:
+            self.status_code = 301
+            self.message = "Moved Permanently"
+
+    def display(self,data):
+        self.request.sendall(data)
+        
     
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8')
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.request.sendall(bytearray("0sK",'utf-8'))
 
         #status code
         self.status_code = 200
-        self.reason = ""
+        self.message = "OK"
 
 
         #Parse data and get request status
         data_list = self.data.split()
         request_status = data_list[0]
+        requested_path = data_list[1]
 
-        #path
-        path = os.path.abspath("www/index.html")
-
-        print(path)
-
-        
-
-      
+        root_path = os.path.join(os.getcwd() + "/www" + requested_path)
+        print(root_path)
 
         
 
         #Check if request_status is GET
         if(request_status != 'GET'):
-            self.status_code = 405
-            self.reason = "Method Not Allowed"
+            self.error_code(405)
+            print(self.status_code)
         else:
-            
+            f = open(root_path)
+            file = f.read()
 
-            pass
+            self.request.sendall(bytearray(file.encode()))
+            #handle path doesnt exist
+            
+        
+
+
+            
 
 
 
