@@ -44,20 +44,20 @@ import webbrowser
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-    
+
     def display(self,path):   
         if '.html' in path:
             f = open(path)
             file = f.read()
 
-            self.request.sendall(bytearray(f"HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n{file}",'utf-8'))
+            self.request.sendall(bytearray(f"HTTP/1.1 {self.status_code} {self.message}\r\nContent-type: text/html\r\n\r\n{file}",'utf-8'))
             f.close()
 
         if '.css' in path:
             f = open(path)
             file = f.read()
 
-            self.request.sendall(bytearray(f"HTTP/1.1 200 OK\r\nContent-type: text/css\r\n\r\n{file}",'utf-8'))
+            self.request.sendall(bytearray(f"HTTP/1.1 {self.status_code} {self.message}\r\nContent-type: text/css\r\n\r\n{file}",'utf-8'))
             f.close()
 
 
@@ -67,8 +67,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
         #self.request.sendall(bytearray("0sK",'utf-8'))
         
         #status code
-        #self.status_code = 200
-        #self.message = "OK"
+        self.status_code = 200
+        self.message = "OK"
         
         #Parse data --> get request status and path
         data_list = self.data.split()
@@ -91,8 +91,9 @@ class MyWebServer(socketserver.BaseRequestHandler):
             else:
                 #code 301
                 if(requested_path == "/deep"):
-                    root_path += '/index.html'        
-                    self.request.sendall(bytearray("HTTP/1.1 301 Moved Permanently\r\nLocation: http://127.0.0.1:8080/deep/index.html\r\n",'utf-8'))
+                    #root_path += '/index.html'    
+                    root_path += '/' 
+                    self.request.sendall(bytearray("HTTP/1.1 301 Moved Permanently\r\nLocation: http://127.0.0.1:8080/deep/\r\n",'utf-8'))
                     print("hello")
                 #redirect to index.html        
                 if (requested_path[-1] == '/'):
@@ -100,7 +101,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
                 #Show Page
                 self.display(root_path)
-                print("Hello")
+                print(root_path)
 
 
 
