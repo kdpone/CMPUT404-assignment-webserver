@@ -44,39 +44,23 @@ import webbrowser
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-
-    def error_code(self, code):
-        if code == 404:
-            self.status_code = 404
-            self.message = "Not found"
-        if code == 405:
-            self.status_code = 405
-            self.message = "Method Not Allowed"
-        if code == 301:
-            self.status_code = 301
-            self.message = "Moved Permanently"
-
-
-    def construct_response(self):
-        self.response = 'HTTP/1.1 ' + str(self.status_code)+ ' ' + self.message +'\r\n'
-                    
-
-    def display(self,path):
-        
-        
+    
+    def display(self,path):   
         if '.html' in path:
             f = open(path)
             file = f.read()
-            #self.request.sendall(bytearray(file.encode()))
-            self.request.sendall(bytearray(f"{self.response}Content-type: text/html\r\n\r\n{file}",'utf-8'))
+
+            self.request.sendall(bytearray(f"HTTP/1.1 {self.status_code} {self.message}\r\nContent-type: text/html\r\n\r\n{file}",'utf-8'))
             f.close()
 
         if '.css' in path:
             f = open(path)
             file = f.read()
-            #self.request.sendall(bytearray(file.encode()))
-            self.request.sendall(bytearray(f"{self.response}Content-type: text/css\r\n\r\n{file}",'utf-8'))
-            f.close
+
+            self.request.sendall(bytearray(f"HTTP/1.1 {self.status_code} {self.message}\r\nContent-type: text/css\r\n\r\n{file}",'utf-8'))
+            f.close()
+
+
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8')
         print ("Got a request of: %s\n" % self.data)
@@ -86,54 +70,35 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.status_code = 200
         self.message = "OK"
         
-
-
-        #Parse data and get request status
+        #Parse data --> get request status and path
         data_list = self.data.split()
         request_status = data_list[0]
         requested_path = data_list[1]
 
-
         #Serves only files in /www folder
         root_path = os.path.join(os.getcwd() + "/www" + requested_path)
-        #print(root_path)
         print(requested_path)
 
-        #redirect to index.html
-        if (requested_path == '/' or requested_path == '/deep/'):
+        #redirect to index.html        
+        if (requested_path[-1] == '/'):
             root_path += 'index.html'
-        
-        #hacky way to do this. refactor if possible
+
         #code 301
         if(requested_path == "/deep"):
-            root_path += '/index.html'
-            self.error_code(301)
-            print(self.status_code)
-            
+            root_path += '/index.html'        
+            self.request.sendall(bytearray("HTTP/1.1 301 Moved Permanently\r\n",'utf-8'))
 
+            
         #Check if request_status is GET
         if(request_status != 'GET'):
-            self.error_code(405)
-            print(self.status_code)
+            self.request.sendall(bytearray("HTTP/1.1 405 Method Not Allowed\r\n",'utf-8'))
+
         else:
-            
-        
             #handle path doesnt exist
-            if (not os.path.exists(root_path)):
-                self.error_code(404)
-                self.construct_response()
-                print(self.response)
-
+            if (not os.path.exists(root_path) or '/..' in root_path):
+                self.request.sendall(bytearray("HTTP/1.1 404 Not Found\r\n",'utf-8'))
             else:
-
-                self.construct_response()
-                self.display(root_path)#opens html
-                
-                
-                print(self.response)
-
-    
-            
+                self.display(root_path)
 
 
 
